@@ -1,33 +1,46 @@
 <script>
 	import { onMount } from "svelte";
+	import { getTodos, markTodoAsComplete, addTodo, deleteTodo } from "./utils";
 	import Todo from "./Todo.svelte";
 	import Loader from "./Loader.svelte";
 	import Input from "./Input.svelte";
+	import Toast from "./Toast.svelte";
 	let isLoading = false;
-	let todos = [
-		{
-			_id: "adsfsdfsdfsdf",
-			task: "Clean room",
-			completed: true,
-		},
-		{
-			_id: "adsfsdfsdfsdf",
-			task: "Clean room 2",
-			completed: false,
-		},
-		{
-			_id: "adsfsdfsdfsdf",
-			task: "Clean room 3",
-			completed: false,
-		},
-	];
+	let isError = false;
+	let message = "";
 
-	function markAsComplete(task) {
-		todos.forEach((todo) => {
-			if (todo.task === task) {
-				todo.completed = true;
-			}
-		});
+	$: {
+		if (isError) {
+			setTimeout(() => {
+				isError = false;
+			}, 1500);
+		}
+
+		console.log(todos);
+	}
+	let todos = [];
+
+	function markAsComplete(id) {
+		isLoading = true;
+		markTodoAsComplete(id)
+			.then(({ error, message }) => {
+				if (error) {
+					isLoading = false;
+					isError = true;
+					message = error;
+					return;
+				}
+
+				isLoading = false;
+				fetchTodos();
+				
+			})
+			.catch((err) => {
+				isLoading = false;
+				isError = true;
+				message = err;
+				return;
+			});
 
 		todos = todos;
 	}
@@ -42,12 +55,72 @@
 	}
 
 	function addTodoToList(input) {
-		todos.unshift({task : input, _id : 'sfsdfsdfsdfsdfsdf', completed : false});
-		todos = todos;
+		if (input.length === 0) {
+			message = "Task cannot be empty";
+			isError = true;
+			return;
+		}
+		let dup = false;
+		todos.forEach((todo) => {
+			if (todo.task === input) {
+				message = "Task already present";
+				isError = true;
+				dup = true;
+			}
+		});
+
+		if (dup) return;
+
+		addTodo(input).then(({error, message}) => {
+			
+			if(error) {
+				isError = true;
+				message = message;
+				isLoading = false;
+				return;
+			}
+
+			fetchTodos();
+		});
+
+	}
+
+	function fetchTodos() {
+		getTodos()
+					.then((result) => {
+						isLoading = false;
+						todos = result;
+					})
+					.catch((err) => {
+						isLoading = false;
+						message = err;
+						isError = true;
+					});
+	}
+
+	function deleteTodoFromList(id) {
+		isLoading = true;
+		deleteTodo(id)
+			.then(({error, message}) => {
+				isLoading = false;
+				if(error) {
+					isError = true;
+					message = message;
+					return;
+				}
+
+				fetchTodos();
+			})
+			.catch(err => {
+				isError = true;
+				message = err;
+				isLoading = false;
+			})
 	}
 
 	onMount(() => {
-		// getTodos();
+		isLoading = true;
+		fetchTodos();
 	});
 </script>
 
@@ -55,13 +128,19 @@
 	<h1 class="header">To-do List with Svelte</h1>
 	<Input {detectEnterKey} {addTodoToList} />
 	<ul class="todos">
-		{#each todos as todo}
-			<Todo {todo} {markAsComplete} />
-		{/each}
+		{#if todos}
+			{#each todos as todo, index}
+				<Todo {todo} {markAsComplete} {index} {deleteTodoFromList}/>
+			{/each}
+		{/if}
 	</ul>
 
 	{#if isLoading}
 		<Loader />
+	{/if}
+
+	{#if isError}
+		<Toast {message} />
 	{/if}
 </div>
 
@@ -84,6 +163,7 @@
 		position: relative;
 		height: 100vh;
 		width: 100%;
+		overflow: hidden;
 		background-color: #6c8784;
 	}
 

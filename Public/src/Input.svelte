@@ -1,5 +1,5 @@
 <script>
-    let input = '';
+    let input = "";
     export let detectEnterKey;
     export let addTodoToList;
 </script>
@@ -9,9 +9,15 @@
         type="text"
         bind:value={input}
         placeholder="Enter a task"
-        on:keydown={(e) => detectEnterKey(e, input)}
+        on:keydown={(e) => {
+            detectEnterKey(e, input);
+        }}
     />
-    <div on:click={() => addTodoToList(input)}>
+    <div
+        on:click={() => {
+            addTodoToList(input);
+        }}
+    >
         <i class="gg-corner-down-left" />
     </div>
 </div>
@@ -38,7 +44,6 @@
         padding: 0 5px;
         color: white;
         font-weight: 200;
-        text-transform: uppercase;
     }
 
     .input-todo > div {

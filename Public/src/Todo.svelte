@@ -1,15 +1,19 @@
 <script>
+    import { fade } from 'svelte/transition';
     export let todo;
+    export let index;
     export let markAsComplete;
+    export let deleteTodoFromList;
+    
 </script>
 
-<div class="todo-item">
+<div class="todo-item"  transition:fade|local="{{delay : 100 * index}}">
     <span class={todo.completed ? 'strike' : ''}>{todo.task}</span>
     <div class="todo-btns">
         {#if !todo.completed}
-            <i on:click={() => markAsComplete(todo.task)} class="gg-check-r"></i>
+            <i on:click={() => markAsComplete(todo.id)} class="gg-check-r"></i>
         {/if}
-        <i class="gg-close-r"></i>
+        <i on:click={() => deleteTodoFromList(todo.id)} class="gg-close-r"></i>
 
     </div>
 </div>
